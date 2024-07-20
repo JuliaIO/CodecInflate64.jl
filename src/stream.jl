@@ -22,7 +22,7 @@ const BUFFER_SIZE = 2^18 -1 # must have enough space for MIN_OUTPUT_MARGIN + MAX
 const order = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]
 const fixed_lit_dist_num_bits_per_op = UInt8[fill(0x08,144); fill(0x09,112); fill(0x07,24); fill(0x08,8); fill(0x05, 32)]
 
-@kwdef mutable struct StreamState
+Base.@kwdef mutable struct StreamState
     in_buf::Vector{UInt8}=zeros(UInt8, BUFFER_SIZE + 1)
     in_read_offset::Int=0
     in_write_offset::Int=0
