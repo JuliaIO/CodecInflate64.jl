@@ -8,5 +8,6 @@
 /Manifest.toml
 fixture.tar.gz
 fixture
+/test/testdata/
 .CondaPkg
 *.cov

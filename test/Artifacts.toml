@@ -1,0 +1,13 @@
+[ziparchives-jl]
+git-tree-sha1 = "df9dada7b01ead92def5830def01103ea6923f53"
+
+    [[ziparchives-jl.download]]
+    sha256 = "99a9bb1d9cba1fae77fd7be224b654da1f247815845ef4ac682a546e8dc70ceb"
+    url = "https://github.com/medyan-dev/ZipArchives.jl/releases/download/v2.1.6/fixture.tar.gz"
+
+[deflate64-rs]
+git-tree-sha1 = "3d6705eb6be762b7a849e06a7352f2a1872e222a"
+
+    [[deflate64-rs.download]]
+    sha256 = "c9d31151deac3eff8856e271c7fb8d2eb2c659d63830955a05c6a481d555d710"
+    url = "https://github.com/anatawa12/deflate64-rs/archive/refs/tags/v0.1.9.tar.gz"

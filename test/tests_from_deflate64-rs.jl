@@ -1,30 +1,33 @@
-#=
-These tests are ported from https://github.com/anatawa12/deflate64-rs
+using Pkg.Artifacts: @artifact_str, ensure_artifact_installed
 
-https://github.com/anatawa12/deflate64-rs is licensed under MIT License:
-> The MIT License (MIT)
-> 
-> Copyright (c) .NET Foundation and Contributors
-> Copyright (c) anatawa12 2023
-> 
-> All rights reserved.
-> 
-> Permission is hereby granted, free of charge, to any person obtaining a copy
-> of this software and associated documentation files (the "Software"), to deal
-> in the Software without restriction, including without limitation the rights
-> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-> copies of the Software, and to permit persons to whom the Software is
-> furnished to do so, subject to the following conditions:
-> 
-> The above copyright notice and this permission notice shall be included in all
-> copies or substantial portions of the Software.
-> 
-> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-> SOFTWARE.
-=#
+# These tests are ported from https://github.com/anatawa12/deflate64-rs/releases/tag/v0.1.9
 
+include("utils.jl")
+
+#TODO Use custom errors for invalid deflate data.
+
+@testset "tests from deflate64-rs" begin
+    ensure_artifact_installed("deflate64-rs", joinpath(@__DIR__,"Artifacts.toml"))
+    test_assets = joinpath(artifact"deflate64-rs", "deflate64-rs-0.1.9", "test-assets")
+    checkcrc32_zipfile(joinpath(test_assets,"deflate64.zip"))
+
+    u = read(joinpath(test_assets,"issue-13/logo.png"))
+    c = read(joinpath(test_assets,"issue-13/unitwf-1.5.0.minimized.zip"))[1183:1182+34919]
+    @test de64compress(c) == u
+
+    c = read(joinpath(test_assets,"issue-23/raw_deflate64_index_out_of_bounds"))
+    @test_throws ErrorException("incomplete code table") de64compress(c)
+
+    c = read(joinpath(test_assets,"issue-25/deflate64_not_enough_space.zip"))[31:end]
+    @test_throws ErrorException("incomplete code table") de64compress(c)
+
+    c = read(joinpath(test_assets,"issue-29/raw.zip"))[122:end]
+    @test_throws ErrorException("incomplete code table") de64compress(c)
+
+    c = read(joinpath(test_assets,"deflate64.zip"))[41:40+2669743]
+    stream = Deflate64DecompressorStream(IOBuffer(c))
+    u = UInt8[]
+    read!(stream, u)
+    @test u == UInt8[]
+    @test read(stream) == read(joinpath(test_assets,"folder/binary.wmv"))
+end

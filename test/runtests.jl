@@ -2,6 +2,7 @@ using Test
 using Random
 using CodecInflate64
 using Aqua: Aqua
+using Pkg.Artifacts: @artifact_str, ensure_artifact_installed
 
 Aqua.test_all(CodecInflate64)
 
@@ -35,5 +36,14 @@ include("tests_from_inflate.jl")
     end
 end
 
+@testset "tests from ZipArchives.jl fixture" begin
+    ensure_artifact_installed("ziparchives-jl", joinpath(@__DIR__,"Artifacts.toml"))
+    fixture_dir = joinpath(artifact"ziparchives-jl", "fixture")
+    for file in readdir(fixture_dir)
+        checkcrc32_zipfile(joinpath(fixture_dir,file))
+    end
+end
+
+include("tests_from_deflate64-rs.jl")
 
 include("test_ts.jl")

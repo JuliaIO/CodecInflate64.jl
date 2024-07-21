@@ -1,3 +1,4 @@
+using Test
 using p7zip_jll: p7zip
 using ZipArchives: 
     ZipReader,
@@ -9,7 +10,7 @@ using ZipArchives:
     zip_compression_method, # experimental
     zip_entry_data_offset # experimental
 using CodecZlib: DeflateCompressor
-using CodecInflate64: DeflateDecompressor, Deflate64Decompressor
+using CodecInflate64: DeflateDecompressor, Deflate64Decompressor, Deflate64DecompressorStream, DeflateDecompressorStream
 
 # p7zip doesn't seem to use the special 16 bit length code
 function p7zip_64compress(data::Vector{UInt8})::Vector{UInt8}
