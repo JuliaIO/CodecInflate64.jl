@@ -6,9 +6,9 @@
 
 CodecInflate64 implements deflate64 decompression for the [TranscodingStream.jl](https://github.com/JuliaIO/TranscodingStreams.jl) interface.
 
-This library's goal is reading entries of ZIP files created by the default Windows archiver.
+This package aims to read entries of ZIP files created by the default Windows archiver.
 
-Deflate64 is a incompatible variant of deflate that Windows sometimes uses when making ZIP files.
+Deflate64 is an incompatible variant of deflate that Windows sometimes uses when making ZIP files.
 
 This package is a work in progress, and may not be able to read all deflate64 data correctly.
 
@@ -18,15 +18,15 @@ The deflate algorithm is described in [RFC 1951](https://www.ietf.org/rfc/rfc195
 
 Deflate64 has a reference implementation in [dotnet](https://github.com/dotnet/runtime/tree/e5efd8010e19593298dc2c3ee15106d5aec5a924/src/libraries/System.IO.Compression/src/System/IO/Compression/DeflateManaged)
 
-It is also describe unofficially in https://libzip.org/specifications/appnote_iz.txt
+It is also described unofficially in https://libzip.org/specifications/appnote_iz.txt
 
 Some of the code from [Inflate.jl](https://github.com/GunnarFarneback/Inflate.jl) is used here, but modified to work with deflate64.
 
-This package exports following codecs and streams:
+This package exports the following codecs and streams:
 
 | Codec                   | Stream                        |
 | ----------------------- | ----------------------------- |
 | `DeflateDecompressor`   | `DeflateDecompressorStream`   |
 | `Deflate64Decompressor` | `Deflate64DecompressorStream` |
 
-See docstrings and [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl) for details.
+See [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl) for details.
