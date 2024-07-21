@@ -1,5 +1,7 @@
 using Test
 using p7zip_jll: p7zip
+using CRC32: crc32
+using InputBuffers: InputBuffer
 using ZipArchives: 
     ZipReader,
     zip_nentries,
@@ -56,15 +58,15 @@ function checkcrc32_zipfile(zipfile::String)
         s = zip_compressed_size(r,i)
         c = data[begin+a:begin+a+s-1]
         u = if method == 9
-            de64compress(c)
+            Deflate64DecompressorStream(InputBuffer(c))
         elseif method == 8
-            decompress(c)
+            DeflateDecompressorStream(InputBuffer(c))
         elseif method == 0
-            c
+            InputBuffer(c)
         else
             error("unknown method in $(repr(zipfile)) entry: $(i) name: $(repr(zip_name(r,i)))")
         end
-        if zip_crc32(u) != zip_stored_crc32(r, i)
+        if crc32(u) != zip_stored_crc32(r, i)
             error("crc32 wrong for $(repr(zipfile)) entry: $(i) name: $(repr(zip_name(r,i)))")
         end
     end
