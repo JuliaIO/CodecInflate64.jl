@@ -82,6 +82,9 @@ function main_run!(all_in::Bool, input::TranscodingStreams.Memory, output::Trans
             end
             run!(s)
             if all_in
+                # @info "all in run"
+                # @show in_length(s)
+                # @show n_available
                 if in_length(s) > n_available
                     error("not enough bytes available")
                 end
@@ -266,6 +269,33 @@ function consume!(s::StreamState, n::UInt8)
     s.in_read_offset = (s.in_read_offset + ((s.bp + n) >> 3)) & BUFFER_SIZE
     s.bp = (s.bp + n) & 0b111
     nothing
+end
+
+"""
+    Parse the dynamic huffman tree.
+
+If 0 is returned: success
+sets `s.lit_tree` and `s.dist_tree`.
+the read and buffered positions will be updated.
+
+If -1 is returned: not enough bits
+failed to parse the trees because there is not enough bits.
+read position is not updated, but buffered position is updated.
+
+If -2 is returned: clen_tree is invalid.
+`s` is invalid and must be reset.
+
+If -3 is returned: lit_tree is invalid.
+`s` is invalid and must be reset.
+
+If -4 is returned: dist_tree is invalid.
+`s` is invalid and must be reset.
+
+
+
+
+"""
+function parse_dynamic_huffman!()
 end
 
 function parse_num_bits_per_op!(
