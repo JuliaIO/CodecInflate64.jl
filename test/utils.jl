@@ -79,7 +79,7 @@ function de64compress_bytes(data::Vector{UInt8})::Vector{UInt8}
     take!(io)
 end
 
-function checkcrc32_zipfile(zipfile::String)
+function checkcrc32_zipfile(zipfile::String; bufsize=2^14)
     data = read(zipfile)
     r = ZipReader(data)
     for i in 1:zip_nentries(r)
@@ -88,9 +88,9 @@ function checkcrc32_zipfile(zipfile::String)
         s = zip_compressed_size(r,i)
         c = data[begin+a:begin+a+s-1]
         u = if method == 9
-            Deflate64DecompressorStream(InputBuffer(c))
+            Deflate64DecompressorStream(InputBuffer(c); bufsize)
         elseif method == 8
-            DeflateDecompressorStream(InputBuffer(c))
+            DeflateDecompressorStream(InputBuffer(c); bufsize)
         elseif method == 0
             InputBuffer(c)
         else

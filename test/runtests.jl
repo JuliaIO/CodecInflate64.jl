@@ -50,6 +50,7 @@ end
     fixture_dir = joinpath(artifact"ziparchives-jl", "fixture")
     for file in readdir(fixture_dir)
         checkcrc32_zipfile(joinpath(fixture_dir,file))
+        checkcrc32_zipfile(joinpath(fixture_dir,file); bufsize=1)
     end
 end
 

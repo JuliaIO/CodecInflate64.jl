@@ -10,6 +10,7 @@ include("utils.jl")
     ensure_artifact_installed("deflate64-rs", joinpath(@__DIR__,"Artifacts.toml"))
     test_assets = joinpath(artifact"deflate64-rs", "deflate64-rs-0.1.9", "test-assets")
     checkcrc32_zipfile(joinpath(test_assets,"deflate64.zip"))
+    checkcrc32_zipfile(joinpath(test_assets,"deflate64.zip"); bufsize=1)
 
     u = read(joinpath(test_assets,"issue-13/logo.png"))
     c = read(joinpath(test_assets,"issue-13/unitwf-1.5.0.minimized.zip"))[1183:1182+34919]
