@@ -2,6 +2,7 @@ using Test
 using p7zip_jll: p7zip
 using CRC32: crc32
 using InputBuffers: InputBuffer
+using TranscodingStreams: TranscodingStreams
 using ZipArchives: 
     ZipReader,
     zip_nentries,
