@@ -57,8 +57,9 @@ function TranscodingStreams.process(
     )
     # @show "proccall" input.size output.size
     # done, in2, out2 = main_run!(all_in, input, output, codec.s) 
-    status, Δin, Δout = try
-        main_run!(input, output, codec.s)
+    local status::Symbol, Δin::Int, Δout::Int
+    try
+        status, Δin, Δout = main_run!(input, output, codec.s)
     catch e
         # rethrow()
         e isa InterruptException && rethrow()

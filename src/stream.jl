@@ -18,9 +18,9 @@ end
 end
 
 "This many bytes must be saved in the output buffer for reference by ops"
-const MAX_DIST::Int64 = 65536
+const MAX_DIST = Int64(65536)
 
-const BUFFER_SIZE::Int64 = 2^16 # must have enough space for MAX_DIST
+const BUFFER_SIZE = Int64(2^16) # must have enough space for MAX_DIST
 @assert BUFFER_SIZE ≥ MAX_DIST
 @assert BUFFER_SIZE - 1 == typemax(UInt16)
 
