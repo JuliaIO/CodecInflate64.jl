@@ -55,22 +55,29 @@ function TranscodingStreams.process(
         output    :: TranscodingStreams.Memory,
         error_ref :: TranscodingStreams.Error,
     )
-    all_in = iszero(input.size)
     # @show "proccall" input.size output.size
     # done, in2, out2 = main_run!(all_in, input, output, codec.s) 
-    done, in2, out2 = try
-        main_run!(all_in, input, output, codec.s)
+    status, Δin, Δout = try
+        main_run!(input, output, codec.s)
     catch e
         # rethrow()
         e isa InterruptException && rethrow()
         error_ref[] = e
         return 0, 0, :error
     end
-    Δin::Int = input.size - in2.size
-    Δout::Int = output.size - out2.size
-    if done
+    if status === :done
+        # done
         return Δin, Δout, :end
-    else
+    elseif status === :input
+        # need more input
+        if iszero(input.size)
+            error_ref[] = ErrorException("not enough input")
+            return Δin, Δout, :error
+        else
+            return Δin, Δout, :ok
+        end
+    elseif status === :output
+        # need more output space
         return Δin, Δout, :ok
     end
 end

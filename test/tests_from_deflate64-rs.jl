@@ -19,7 +19,7 @@ include("utils.jl")
     @test_throws ErrorException("incomplete code table") de64compress(c)
 
     c = read(joinpath(test_assets,"issue-25/deflate64_not_enough_space.zip"))[31:end]
-    @test_throws ErrorException("incomplete code table") de64compress(c)
+    @test_throws ErrorException("cannot read past beginning of out buffer dist: 65536") de64compress(c)
 
     c = read(joinpath(test_assets,"issue-29/raw.zip"))[122:end]
     @test_throws ErrorException("incomplete code table") de64compress(c)
