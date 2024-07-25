@@ -21,7 +21,10 @@ include("tests_from_inflate.jl")
     end
     @test decompress(zlib_compress(d)) == d
     @test decompress(p7zip_compress(d)) == d
+    @test decompress_bytes(zlib_compress(d)) == d
+    @test decompress_bytes(p7zip_compress(d)) == d
     @test de64compress(p7zip_64compress(d)) == d
+    @test de64compress_bytes(p7zip_64compress(d)) == d
     @test_throws ErrorException de64compress(p7zip_64compress(d)[begin:end-1])
 
     for n in 65536-1000:65536+1000
@@ -34,7 +37,10 @@ include("tests_from_inflate.jl")
         d = zeros(UInt8, n)
         @test decompress(zlib_compress(d)) == d
         @test decompress(p7zip_compress(d)) == d
+        @test decompress_bytes(zlib_compress(d)) == d
+        @test decompress_bytes(p7zip_compress(d)) == d
         @test de64compress(p7zip_64compress(d)) == d
+        @test de64compress_bytes(p7zip_64compress(d)) == d
         @test_throws ErrorException de64compress(p7zip_64compress(d)[begin:end-1])
     end
 end

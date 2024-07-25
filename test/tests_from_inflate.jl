@@ -35,7 +35,10 @@ long_string = join(fill(medium_string, 1000), short_string)
         d = collect(codeunits(s))
         @test decompress(zlib_compress(d)) == d
         @test decompress(p7zip_compress(d)) == d
+        @test decompress_bytes(zlib_compress(d)) == d
+        @test decompress_bytes(p7zip_compress(d)) == d
         @test de64compress(p7zip_64compress(d)) == d
+        @test de64compress_bytes(p7zip_64compress(d)) == d
     end
 end
 
@@ -45,7 +48,10 @@ end
         d = rand(UInt8, n)
         @test decompress(zlib_compress(d)) == d
         @test decompress(p7zip_compress(d)) == d
+        @test decompress_bytes(zlib_compress(d)) == d
+        @test decompress_bytes(p7zip_compress(d)) == d
         @test de64compress(p7zip_64compress(d)) == d
+        @test de64compress_bytes(p7zip_64compress(d)) == d
     end
 end
 
@@ -55,7 +61,10 @@ end
         d = rand(UInt8, n) .& 0x0f
         @test decompress(zlib_compress(d)) == d
         @test decompress(p7zip_compress(d)) == d
+        @test decompress_bytes(zlib_compress(d)) == d
+        @test decompress_bytes(p7zip_compress(d)) == d
         @test de64compress(p7zip_64compress(d)) == d
+        @test de64compress_bytes(p7zip_64compress(d)) == d
     end
 end
 
@@ -65,6 +74,7 @@ empty_deflate = [0x03, 0x00]
 @testset "Empty messages" begin
     @test decompress(empty_deflate) == UInt8[]
     @test de64compress(empty_deflate) == UInt8[]
+    @test de64compress_bytes(empty_deflate) == UInt8[]
 end
 
 @testset "Deflate corruption" begin
@@ -74,7 +84,9 @@ end
                0xdb, 0x48, 0xf2, 0x3f]       # incomplete code table
     for d in [d1, d2, d3]
         @test_throws ErrorException decompress(d)
+        @test_throws ErrorException decompress_bytes(d)
         @test_throws ErrorException de64compress(d)
+        @test_throws ErrorException de64compress_bytes(d)
     end
 end
 

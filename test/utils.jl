@@ -49,6 +49,35 @@ function de64compress(data::Vector{UInt8})::Vector{UInt8}
     transcode(Deflate64Decompressor, data)
 end
 
+# decompress one byte at a time
+function decompress_bytes(data::Vector{UInt8})::Vector{UInt8}
+    io = IOBuffer()
+    s = DeflateDecompressorStream(io; bufsize=1)
+    for i in eachindex(data)
+        write(s, data[i])
+        flush(s)
+    end
+    write(s, TranscodingStreams.TOKEN_END)
+    flush(s)
+    take!(io)
+end
+
+function de64compress(data::Vector{UInt8})::Vector{UInt8}
+    transcode(Deflate64Decompressor, data)
+end
+
+function de64compress_bytes(data::Vector{UInt8})::Vector{UInt8}
+    io = IOBuffer()
+    s = Deflate64DecompressorStream(io; bufsize=1)
+    for i in eachindex(data)
+        write(s, data[i])
+        flush(s)
+    end
+    write(s, TranscodingStreams.TOKEN_END)
+    flush(s)
+    take!(io)
+end
+
 function checkcrc32_zipfile(zipfile::String)
     data = read(zipfile)
     r = ZipReader(data)
