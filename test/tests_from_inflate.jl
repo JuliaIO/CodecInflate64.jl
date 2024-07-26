@@ -83,10 +83,10 @@ end
     d3 = UInt8[0xed, 0x1c, 0xed, 0x72,
                0xdb, 0x48, 0xf2, 0x3f]       # incomplete code table
     for d in [d1, d2, d3]
-        @test_throws ErrorException decompress(d)
-        @test_throws ErrorException decompress_bytes(d)
-        @test_throws ErrorException de64compress(d)
-        @test_throws ErrorException de64compress_bytes(d)
+        @test_throws DecompressionError decompress(d)
+        @test_throws DecompressionError decompress_bytes(d)
+        @test_throws DecompressionError de64compress(d)
+        @test_throws DecompressionError de64compress_bytes(d)
     end
 end
 

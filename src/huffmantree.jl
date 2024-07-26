@@ -27,14 +27,17 @@ function parse_huffman!(
     sorted_ops .= 0xFFFF
     op_offset_per_num_bit .= 0x0000
     max_num_bits = length(num_ops_per_num_bit)
+    code_space::UInt64 = 0 # this keeps track of the amount of code_space used out of 2^32
     @assert max_num_bits ≥ maximum(num_bits_per_op)
     @assert length(op_offset_per_num_bit) == max_num_bits + 1
     @assert length(sorted_ops) ≥ length(num_bits_per_op)
     for n in num_bits_per_op
         if !iszero(n)
             num_ops_per_num_bit[n] += 1
+            code_space += UInt64(1)<<(32-n) # a 1 bit code uses half code_space, 2 bit code uses 1/4 code_space ...
         end
     end
+
     op_offset_per_num_bit[1] = 1
     op_offset_per_num_bit[2] = 1
     for n in 2:max_num_bits
@@ -47,6 +50,28 @@ function parse_huffman!(
             off = op_offset_per_num_bit[n+1]
             sorted_ops[off] = c-1
             op_offset_per_num_bit[n+1] = off + 1
+        end
+    end
+    # the logic for this test is from 
+    # https://github.com/ebiggers/libdeflate/blob/dc76454a39e7e83b68c3704b6e3784654f8d5ac5/lib/deflate_decompress.c#L791
+    if code_space > UInt64(1)<<32
+        # This can never be valid
+        throw(DecompressionError("overfull code"))
+    elseif code_space < UInt64(1)<<32
+        # This can be valid in some special cases described in the RFC
+        # https://github.com/ebiggers/libdeflate/blob/dc76454a39e7e83b68c3704b6e3784654f8d5ac5/lib/deflate_decompress.c#L809-L839
+        if !iszero(code_space) # no codes is valid if no distance codes are used.
+            if code_space != UInt64(1)<<31 || num_ops_per_num_bit[1] != 1 # one code encoded with one bit is valid.
+                throw(DecompressionError("incomplete code"))
+            else
+                # pad out huffman tree like in libdeflate
+                # This ensures that all codes can be decoded without error
+                # later on.
+                num_ops_per_num_bit[1] = 2
+                op_offset_per_num_bit .= 3
+                op_offset_per_num_bit[1] = 1
+                sorted_ops[2] = sorted_ops[1]
+            end
         end
     end
 end
@@ -63,5 +88,5 @@ function get_op(bits::UInt16, tree::HuffmanTree)::Tuple{UInt16, UInt8}
         end
         v -= tree.num_ops_per_num_bit[nbits]
     end
-    error("incomplete code table")
+    error("incomplete code table") # This should never happen because of other checks
 end

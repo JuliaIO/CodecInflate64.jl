@@ -4,7 +4,6 @@ using Pkg.Artifacts: @artifact_str, ensure_artifact_installed
 
 include("utils.jl")
 
-#TODO Use custom errors for invalid deflate data.
 
 @testset "tests from deflate64-rs" begin
     ensure_artifact_installed("deflate64-rs", joinpath(@__DIR__,"Artifacts.toml"))
@@ -17,13 +16,13 @@ include("utils.jl")
     @test de64compress(c) == u
 
     c = read(joinpath(test_assets,"issue-23/raw_deflate64_index_out_of_bounds"))
-    @test_throws ErrorException("incomplete code table") de64compress(c)
+    @test_throws DecompressionError("incomplete code") de64compress(c)
 
     c = read(joinpath(test_assets,"issue-25/deflate64_not_enough_space.zip"))[31:end]
-    @test_throws ErrorException("cannot read past beginning of out buffer dist: 65536") de64compress(c)
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(c)
 
     c = read(joinpath(test_assets,"issue-29/raw.zip"))[122:end]
-    @test_throws ErrorException("incomplete code table") de64compress(c)
+    @test_throws DecompressionError("incomplete code") de64compress(c)
 
     c = read(joinpath(test_assets,"deflate64.zip"))[41:40+2669743]
     stream = Deflate64DecompressorStream(IOBuffer(c))

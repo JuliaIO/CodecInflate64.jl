@@ -62,7 +62,7 @@ function TranscodingStreams.process(
         status, Δin, Δout = main_run!(input, output, codec.s)
     catch e
         # rethrow()
-        e isa InterruptException && rethrow()
+        e isa DecompressionError || rethrow()
         error_ref[] = e
         return 0, 0, :error
     end
@@ -72,7 +72,7 @@ function TranscodingStreams.process(
     elseif status === :input
         # need more input
         if iszero(input.size)
-            error_ref[] = ErrorException("not enough input")
+            error_ref[] = DecompressionError("not enough input")
             return Δin, Δout, :error
         else
             return Δin, Δout, :ok

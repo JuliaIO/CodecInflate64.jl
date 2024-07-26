@@ -198,7 +198,7 @@ function read_input_bits!(s::StreamState)::Bool
             elseif BTYPE == 0b10
                 s.in_mode = NUM_CODES
             else
-                error("invalid block compression mode 3")
+                throw(DecompressionError("invalid block compression mode 3"))
             end
         end
     elseif s.in_mode == NON_COMPRESSED_LENS
@@ -214,7 +214,7 @@ function read_input_bits!(s::StreamState)::Bool
             s.mode = COPY_OUT
             s.in_mode = HEADER_BITS
             if len ⊻ nlen != 0xffff
-                error("corrupted copy lengths")
+                throw(DecompressionError("corrupted copy lengths"))
             end
             s.len = len
         end
@@ -241,6 +241,9 @@ function read_input_bits!(s::StreamState)::Bool
                 s.clen_num_bits_per_op[1 + order[i]] = x & 0b111
                 x >>= 0x03
             end
+            if all(iszero, s.clen_num_bits_per_op)
+                throw(DecompressionError("no code for clen"))
+            end
             parse_huffman!(s.clen_tree, s.clen_num_bits_per_op)
             s.lit_len_dist_num_bits_per_op .= 0x00
             s.num_bits_per_op_idx = 1
@@ -251,6 +254,8 @@ function read_input_bits!(s::StreamState)::Bool
             local op, nbits = get_op(s.in_buf%UInt16, s.clen_tree)
             local i = s.num_bits_per_op_idx
             local n::Int
+            local max_i = s.nlit + s.ndist
+            @assert i ≤ max_i
             if !consume!(s, nbits)
                 return false
             end
@@ -263,6 +268,11 @@ function read_input_bits!(s::StreamState)::Bool
                 if !consume!(s, 0x02) #   The next 2 bits indicate repeat length
                     return false
                 end
+                if isone(i)
+                    throw(DecompressionError("no previous code length to repeat"))
+                elseif i + n - 1 > max_i
+                    throw(DecompressionError("too many code lengths"))
+                end
                 s.lit_len_dist_num_bits_per_op[i:i + n - 1] .= s.lit_len_dist_num_bits_per_op[i-1]
                 i += n
             elseif op == 0x0011
@@ -270,6 +280,9 @@ function read_input_bits!(s::StreamState)::Bool
                 n = s.in_buf&0b111 + 3
                 if !consume!(s, 0x03) # (3 bits of length)
                     return false
+                end
+                if i + n - 1 > max_i
+                    throw(DecompressionError("too many code lengths"))
                 end
                 s.lit_len_dist_num_bits_per_op[i:i + n - 1] .= 0x00
                 i += n
@@ -279,14 +292,29 @@ function read_input_bits!(s::StreamState)::Bool
                 if !consume!(s, 0x07) # (7 bits of length)
                     return false
                 end
+                if i + n - 1 > max_i
+                    throw(DecompressionError("too many code lengths"))
+                end
                 s.lit_len_dist_num_bits_per_op[i:i + n - 1] .= 0x00
                 i += n
             else
                 error("unreachable")
             end
-            if i > s.nlit + s.ndist
-                parse_huffman!(s.lit_len_tree, view(s.lit_len_dist_num_bits_per_op, 1:Int(s.nlit)))
-                parse_huffman!(s.dist_tree, view(s.lit_len_dist_num_bits_per_op, (Int(s.nlit)+1):(Int(s.nlit+s.ndist))))
+            if i > max_i
+                local lit_len_num_bits_per_op = view(s.lit_len_dist_num_bits_per_op, 1:Int(s.nlit))
+                local dist_num_bits_per_op = view(s.lit_len_dist_num_bits_per_op, Int(s.nlit+1):Int(s.nlit+s.ndist))
+                if iszero(lit_len_num_bits_per_op[1 + 256])
+                    throw(DecompressionError("no code for end-of-block"))
+                end
+                # if there are no dist codes, there also cannot be any len codes
+                if all(iszero, dist_num_bits_per_op)
+                    local last_lit_len_op = something(findlast(!iszero, lit_len_num_bits_per_op))
+                    if last_lit_len_op > 1 + 256
+                        throw(DecompressionError("no codes for distances, but there is a code for length"))
+                    end
+                end
+                parse_huffman!(s.lit_len_tree, lit_len_num_bits_per_op)
+                parse_huffman!(s.dist_tree, dist_num_bits_per_op)
                 s.in_mode = LIT_LEN_DIST_OP
             else
                 s.num_bits_per_op_idx = i
@@ -331,7 +359,9 @@ function read_input_bits!(s::StreamState)::Bool
                     end
                 else
                     # unknown op
-                    error("unknown op")
+                    # if the fixed Huffman codes are used
+                    # op 286 and op 287 are invalid but can be encoded.
+                    throw(DecompressionError("unknown len op"))
                 end
                 # read dist
                 op, nbits = get_op(s.in_buf%UInt16, s.dist_tree)
@@ -442,7 +472,7 @@ this can error if `dist` goes before the start of the out buffer.
 """
 function copy_from_output!(out_ptr::Ptr{UInt8}, s::StreamState, n_copy::Int64, dist::UInt32)::Nothing
     if dist > BUFFER_SIZE || iszero(dist) || (!s.out_full && s.out_offset < dist)
-        error("cannot read past beginning of out buffer dist: $(dist)")
+        throw(DecompressionError("cannot read before beginning of out buffer"))
     end
     for i in 1:n_copy
         x = s.out_buf[begin + (s.out_offset - dist%UInt16)]
