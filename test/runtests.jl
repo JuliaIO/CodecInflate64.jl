@@ -12,6 +12,10 @@ include("utils.jl")
 
 include("tests_from_inflate.jl")
 
+include("test_huffman.jl")
+
+include("test_errors.jl")
+
 @testset "Exercise Deflate64 distances and lengths" begin
     thing = rand(UInt8, 200)
     d = UInt8[]

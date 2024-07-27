@@ -241,9 +241,6 @@ function read_input_bits!(s::StreamState)::Bool
                 s.clen_num_bits_per_op[1 + order[i]] = x & 0b111
                 x >>= 0x03
             end
-            if all(iszero, s.clen_num_bits_per_op)
-                throw(DecompressionError("no code for clen"))
-            end
             parse_huffman!(s.clen_tree, s.clen_num_bits_per_op)
             s.lit_len_dist_num_bits_per_op .= 0x00
             s.num_bits_per_op_idx = 1
@@ -306,15 +303,17 @@ function read_input_bits!(s::StreamState)::Bool
                 if iszero(lit_len_num_bits_per_op[1 + 256])
                     throw(DecompressionError("no code for end-of-block"))
                 end
+                parse_huffman!(s.lit_len_tree, lit_len_num_bits_per_op)
                 # if there are no dist codes, there also cannot be any len codes
                 if all(iszero, dist_num_bits_per_op)
                     local last_lit_len_op = something(findlast(!iszero, lit_len_num_bits_per_op))
                     if last_lit_len_op > 1 + 256
                         throw(DecompressionError("no codes for distances, but there is a code for length"))
                     end
+                    reset!(s.dist_tree)
+                else
+                    parse_huffman!(s.dist_tree, dist_num_bits_per_op)
                 end
-                parse_huffman!(s.lit_len_tree, lit_len_num_bits_per_op)
-                parse_huffman!(s.dist_tree, dist_num_bits_per_op)
                 s.in_mode = LIT_LEN_DIST_OP
             else
                 s.num_bits_per_op_idx = i
