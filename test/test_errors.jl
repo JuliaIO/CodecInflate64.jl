@@ -2,6 +2,10 @@
 
 include("utils.jl")
 
+@testset "error printing" begin
+    @test sprint(io-> Base.showerror(io, DecompressionError("invalid block compression mode 3"))) == "DecompressionError: invalid block compression mode 3"
+end
+
 @testset "decompressing corrupt input with $(decompress)" for decompress in (decompress, decompress_bytes)
     # HEADER_BITS
     @test_throws DecompressionError("invalid block compression mode 3") decompress([0b111, 0x00])
