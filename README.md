@@ -6,13 +6,11 @@
 
 CodecInflate64 implements deflate64 decompression for the [TranscodingStream.jl](https://github.com/JuliaIO/TranscodingStreams.jl) interface.
 
-This package aims to read entries of ZIP files created by the default Windows archiver.
+This package aims to read entries of ZIP files created by the default Windows File Explorer.
 
-Deflate64 is an incompatible variant of deflate that Windows sometimes uses when making ZIP files.
+Deflate64 is an incompatible variant of deflate that Windows File Explorer sometimes uses when making ZIP files.
 
 This package is a work in progress, and may not be able to read all deflate64 data correctly.
-
-Check all decompressed data with a checksum.
 
 The deflate algorithm is described in [RFC 1951](https://www.ietf.org/rfc/rfc1951.txt).
 
@@ -30,3 +28,7 @@ This package exports the following codecs and streams:
 | `Deflate64Decompressor` | `Deflate64DecompressorStream` |
 
 See [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl) for details.
+
+Related packages in other programming languages:
+- Rust: https://github.com/anatawa12/deflate64-rs
+- Python: https://github.com/brianhelba/zipfile-deflate64
