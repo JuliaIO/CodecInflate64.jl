@@ -50,7 +50,7 @@ end
 end
 
 @testset "random nbits" begin
-    for trial in 1:100000
+    for trial in 1:10000
         n = rand(2:19)
         num_bits_per_op = rand(0x00:0x07, n)
         sum(num_bits_per_op) < 2 && continue

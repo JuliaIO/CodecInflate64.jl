@@ -2,7 +2,7 @@
 
 include("utils.jl")
 
-@testset "decompressing corrupt input" begin
+@testset "decompressing corrupt input with $(decompress)" for decompress in (decompress, decompress_bytes)
     # HEADER_BITS
     @test_throws DecompressionError("invalid block compression mode 3") decompress([0b111, 0x00])
     @test_throws DecompressionError("invalid block compression mode 3") decompress([0b110, 0x00])
