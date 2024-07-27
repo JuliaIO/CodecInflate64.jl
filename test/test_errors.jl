@@ -171,15 +171,121 @@ include("utils.jl")
 
     # LIT_LEN_DIST_OP
     @test_throws DecompressionError("unknown len op") decompress(bitvector_to_bytes(Bool[
-        bits_dynamic_huffman_header(
-        );
+        bits_dynamic_huffman_header();
         [1,1,0,0,0,1,1,1,];
     ]))
     @test_throws DecompressionError("unknown len op") decompress(bitvector_to_bytes(Bool[
-        bits_dynamic_huffman_header(
-        );
+        bits_dynamic_huffman_header();
+        [1,1,0,0,0,1,1,0,];
+    ]))
+    @test_throws DecompressionError("unknown len op") decompress(bitvector_to_bytes(Bool[
+        [1,1,0];
+        [1,1,0,0,0,1,1,1,];
+    ]))
+    @test_throws DecompressionError("unknown len op") decompress(bitvector_to_bytes(Bool[
+        [1,1,0];
         [1,1,0,0,0,1,1,0,];
     ]))
 
+    # Reading before the beginning of the buffer
+    @test UInt8[] == decompress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") decompress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [0,0,0,0,0,0,1,];
+        [0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") decompress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [0,0,0,0,0,0,1,];
+        [1,1,1,1,1,];
+        bit_digits(0x3FFF,14);
+    ]))
+    @test fill(0x8F, 4) == decompress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [0,0,0,0,0,0,1,];
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test fill(0x8F, 259) == decompress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [1,1,0,0,0,1,0,1,];
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test fill(0x8F, 4) == de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0, 16);
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test fill(0x8F, 1+3+0xFFFF) == de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF, 16);
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0, 16);
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF, 16);
+        [0,0,0,0,0,];
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF, 16);
+        [1,1,1,1,1,];
+        bit_digits(0x3FFF,14);
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF-3, 16);
+        [1,1,1,1,1,];
+        bit_digits(0x3FFF,14);
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test fill(0x8F, 2^16 + 2^16+2) == de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF-3, 16);
+        [0,0,0,0,0,];
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF, 16);
+        [1,1,1,1,1,];
+        bit_digits(0x3FFF,14);
+        [0,0,0,0,0,0,0,];
+    ]))
+    @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
+        bits_dynamic_huffman_header();
+        [1,0,1,1,1,1,1,1,]; # lit 8F
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF-4, 16);
+        [0,0,0,0,0,];
+        [1,1,0,0,0,1,0,1,];
+        bit_digits(0xFFFF, 16);
+        [1,1,1,1,1,];
+        bit_digits(0x3FFF,14);
+        [0,0,0,0,0,0,0,];
+    ]))
 
 end

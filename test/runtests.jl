@@ -31,10 +31,12 @@ include("test_errors.jl")
     @test de64compress_bytes(p7zip_64compress(d)) == d
     @test_throws DecompressionError de64compress(p7zip_64compress(d)[begin:end-1])
 
-    for n in 65536-1000:65536+1000
-        d = [thing; zeros(UInt8, n); thing]
-        @test decompress(p7zip_64compress(d)) == d
-        @test_throws DecompressionError de64compress(p7zip_64compress(d)[begin:end-1])
+    for n_start in [0, 65536-100, 65536*3]
+        for n in 65536-400:65536+400
+            d = [zeros(UInt8, n_start); thing; zeros(UInt8, n); thing]
+            @test de64compress(p7zip_64compress(d)) == d
+            @test_throws DecompressionError de64compress(p7zip_64compress(d)[begin:end-1])
+        end
     end
 
     for n in [0:1000; 1000000;]
