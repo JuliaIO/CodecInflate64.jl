@@ -2,13 +2,16 @@ using CodecInflate64
 using CodecZlib: DeflateCompressor, DeflateCompressorStream
 using Random
 using Test
-import TranscodingStreams:
-    TranscodingStreams,
-    TranscodingStream,
+using TranscodingStreams: TranscodingStream
+using TestsForCodecPackages:
     test_roundtrip_read,
     test_roundtrip_write,
+    test_roundtrip_transcode,
     test_roundtrip_lines,
-    test_roundtrip_transcode
+    test_roundtrip_seekstart,
+    test_roundtrip_fileio,
+    test_chunked_read,
+    test_chunked_write
 
 @testset "Deflate Codec" begin
 
@@ -18,11 +21,12 @@ import TranscodingStreams:
 
     test_roundtrip_read(DeflateCompressorStream, DeflateDecompressorStream)
     test_roundtrip_write(DeflateCompressorStream, DeflateDecompressorStream)
-    test_roundtrip_lines(DeflateCompressorStream, DeflateDecompressorStream)
-    if isdefined(TranscodingStreams, :test_roundtrip_seekstart)
-        TranscodingStreams.test_roundtrip_seekstart(DeflateCompressorStream, DeflateDecompressorStream)
-    end
     test_roundtrip_transcode(DeflateCompressor, DeflateDecompressor)
+    test_roundtrip_lines(DeflateCompressorStream, DeflateDecompressorStream)
+    test_roundtrip_seekstart(DeflateCompressorStream, DeflateDecompressorStream)
+    test_roundtrip_fileio(DeflateCompressor, DeflateDecompressor)
+    test_chunked_read(DeflateCompressor, DeflateDecompressor)
+    test_chunked_write(DeflateCompressor, DeflateDecompressor)
 
     @test DeflateDecompressorStream <: TranscodingStream
 end
