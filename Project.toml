@@ -1,7 +1,7 @@
 name = "CodecInflate64"
 uuid = "6309b1aa-fc58-479c-8956-599a07234577"
 authors = ["nhz2 <nhz2@cornell.edu>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
