@@ -232,10 +232,9 @@ end
     @test fill(0x8F, 1+3+0xFFFF) == de64compress(bitvector_to_bytes(Bool[
         bits_dynamic_huffman_header();
         [1,0,1,1,1,1,1,1,]; # lit 8F
-        [1,1,0,0,0,1,0,1,];
-        bit_digits(0xFFFF, 16);
-        [0,0,0,0,0,];
-        [0,0,0,0,0,0,0,];
+        [1,1,0,0,0,1,0,1,]; bit_digits(0xFFFF, 16); # length of 65538
+        [0,0,0,0,0,]; # distance of 1
+        [0,0,0,0,0,0,0,]; # end of block
     ]))
     @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
         bits_dynamic_huffman_header();
@@ -270,14 +269,11 @@ end
     @test fill(0x8F, 2^16 + 2^16+2) == de64compress(bitvector_to_bytes(Bool[
         bits_dynamic_huffman_header();
         [1,0,1,1,1,1,1,1,]; # lit 8F
-        [1,1,0,0,0,1,0,1,];
-        bit_digits(0xFFFF-3, 16);
-        [0,0,0,0,0,];
-        [1,1,0,0,0,1,0,1,];
-        bit_digits(0xFFFF, 16);
-        [1,1,1,1,1,];
-        bit_digits(0x3FFF,14);
-        [0,0,0,0,0,0,0,];
+        [1,1,0,0,0,1,0,1,]; bit_digits(0xFFFF-3, 16); # length of 65535
+        [0,0,0,0,0,]; # distance of 1
+        [1,1,0,0,0,1,0,1,]; bit_digits(0xFFFF, 16); # length of 65538
+        [1,1,1,1,1,]; bit_digits(0x3FFF,14); # distance of 65536
+        [0,0,0,0,0,0,0,];# end of block
     ]))
     @test_throws DecompressionError("cannot read before beginning of out buffer") de64compress(bitvector_to_bytes(Bool[
         bits_dynamic_huffman_header();
