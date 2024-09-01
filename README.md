@@ -1,4 +1,4 @@
-# (WIP) CodecInflate64.jl
+# CodecInflate64.jl
 
 [![CI](https://github.com/nhz2/CodecInflate64.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/nhz2/CodecInflate64.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/nhz2/CodecInflate64.jl/branch/main/graph/badge.svg?token=K3J0T9BZ42)](https://codecov.io/gh/nhz2/CodecInflate64.jl)
@@ -9,8 +9,6 @@ CodecInflate64 implements deflate64 decompression for the [TranscodingStream.jl]
 This package aims to read entries of ZIP files created by the default Windows File Explorer.
 
 Deflate64 is an incompatible variant of deflate that Windows File Explorer sometimes uses when making ZIP files.
-
-This package is a work in progress, and may not be able to read all deflate64 data correctly.
 
 The deflate algorithm is described in [RFC 1951](https://www.ietf.org/rfc/rfc1951.txt).
 
