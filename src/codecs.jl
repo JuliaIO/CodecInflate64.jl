@@ -54,7 +54,7 @@ function TranscodingStreams.process(
         input     :: TranscodingStreams.Memory,
         output    :: TranscodingStreams.Memory,
         error_ref :: TranscodingStreams.Error,
-    )
+    )::Tuple{Int, Int, Symbol}
     # @show "proccall" input.size output.size
     # done, in2, out2 = main_run!(all_in, input, output, codec.s) 
     local status::Symbol, Δin::Int, Δout::Int
@@ -80,5 +80,7 @@ function TranscodingStreams.process(
     elseif status === :output
         # need more output space
         return Δin, Δout, :ok
+    else
+        @assert false "unreachable"
     end
 end
