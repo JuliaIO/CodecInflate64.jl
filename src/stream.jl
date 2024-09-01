@@ -39,6 +39,7 @@ Base.@kwdef mutable struct StreamState
     len::UInt32=0
     dist::UInt32=0
     lit::UInt8=0
+    copy_len::UInt16=0
     deflate64::Bool
     in_final_block::Bool=false
     nlit::UInt16=0
@@ -64,6 +65,7 @@ function reset!(s::StreamState)
     s.len = 0
     s.dist = 0
     s.lit = 0
+    s.copy_len = 0
     s.in_final_block = false
     s.nlit = 0
     s.ndist = 0
@@ -107,25 +109,25 @@ function main_run!(input::TranscodingStreams.Memory, output::TranscodingStreams.
             # @info "after reading"
             # @show Δin Δout s.bp s.bits_left
         elseif s.mode == COPY_OUT
-            # @info s.len
+            # @info s.copy_len
             # @info "before refund"
             # @show Δin Δout s.bp s.bits_left
             Δin += refund_in_buf!(s)
             # @info "after refund"
             # @show Δin Δout s.bp s.bits_left
             @assert iszero(s.bp)
-            @assert !signbit(Δin)
+            !signbit(Δin) || error("internal error copying from input")
             in_left = in_size - Δin
             out_margin = out_size - Δout
-            n_copy = min(out_margin, Int64(s.len), in_left)
+            n_copy = UInt16(min(out_margin, Int64(s.copy_len), in_left))
             # @show n_copy
-            !signbit(n_copy) || error("internal error copying from input, this should never happen")
-            unsafe_copyto!(output.ptr+Δout, input.ptr+Δin, n_copy)
+            unsafe_copyto!(output.ptr+Δout, input.ptr+Δin, Int(n_copy))
             copy_from_input!(s, input.ptr+Δin, n_copy)
-            s.len -= n_copy
+            # These cannot overflow out_size because of min check
+            s.copy_len -= n_copy
             Δin += n_copy
             Δout += n_copy
-            if iszero(s.len)
+            if iszero(s.copy_len)
                 if s.in_final_block
                     s.mode = DONE
                 else
@@ -140,31 +142,34 @@ function main_run!(input::TranscodingStreams.Memory, output::TranscodingStreams.
             end
         elseif s.mode == RUN_OP
             out_margin = out_size - Δout
+            !signbit(out_margin) || error("internal error copying from output")
             # length distance copy
             n_copy = min(out_margin, Int64(s.len))
-            !signbit(n_copy) || error("internal error copying from output, this should never happen")
             copy_from_output!(output.ptr+Δout, s, n_copy, s.dist) # this can error if s.dist goes before the start of the out buffer.
             s.len -= n_copy
-            Δout += n_copy
+            Δout += n_copy # This cannot overflow out_size because of min check
             if iszero(s.len)
                 s.mode = READ_BITS
             else
                 Δin += refund_in_buf!(s)
+                !signbit(Δin) || error("internal error refunding to input after partial RUN_OP")
                 return :output, Δin, Δout
             end
         elseif s.mode == WRITE_LIT
             out_margin = out_size - Δout
             if out_margin < 1
                 Δin += refund_in_buf!(s)
+                !signbit(Δin) || error("internal error refunding to input after partial WRITE_LIT")
                 return :output, Δin, Δout
             else
                 unsafe_store!(output.ptr+Δout, s.lit)
-                Δout += 1
                 copy_one_byte!(s, s.lit)
+                Δout += 1
                 s.mode = READ_BITS
             end
         elseif s.mode == DONE
             Δin += refund_in_buf!(s)
+            !signbit(Δin) || error("internal error refunding to input after DONE")
             return :done, Δin + !iszero(s.bp), Δout
         else
             @assert false "unreachable"
@@ -216,7 +221,7 @@ function read_input_bits!(s::StreamState)::Bool
             if len ⊻ nlen != 0xffff
                 throw(DecompressionError("corrupted copy lengths"))
             end
-            s.len = len
+            s.copy_len = len
         end
     elseif s.in_mode == NUM_CODES
         let s=s
@@ -448,25 +453,29 @@ end
 """
 copy `n_copy` bytes from `in_ptr` into the out buffer.
 """
-function copy_from_input!(s::StreamState, in_ptr::Ptr{UInt8}, n_copy::Int64)::Nothing
-    @assert n_copy ∈ (0:BUFFER_SIZE)
+function copy_from_input!(s::StreamState, in_ptr::Ptr{UInt8}, u16_n_copy::UInt16)::Nothing
+    n_copy = Int64(u16_n_copy)
     out_buf = s.out_buf
     out_offset = s.out_offset
+    # this addition cannot overflow because n_copy and out_offset are ∈ 0:BUFFER_SIZE
     s.out_full |= (out_offset + n_copy ≥ BUFFER_SIZE)
-    n_copy_next = min(BUFFER_SIZE - out_offset, n_copy)
+    # n_copy_next ∈ 0:n_copy because out_offset < BUFFER_SIZE and n_copy ≥ 0
+    n_copy_next = min(BUFFER_SIZE - out_offset, n_copy)::Int64
+    # This is inbounds because the min above.
     GC.@preserve out_buf unsafe_copyto!(pointer(out_buf, 1 + out_offset), in_ptr, n_copy_next)
-    out_offset += n_copy_next%UInt16
     if n_copy_next < n_copy
+        # wrap around and write any extra data to the start of out_buf
         n_copy_start = n_copy - n_copy_next
-        GC.@preserve out_buf unsafe_copyto!(pointer(out_buf, 1 + out_offset), in_ptr + n_copy_next, n_copy_start)
-        out_offset += n_copy_start%UInt16
+        # This is inbounds because n_copy_next ∈ 0:n_copy , so n_copy_start ∈ 0:n_copy, and
+        # n_copy ∈ 0:BUFFER_SIZE as a precondition
+        GC.@preserve out_buf unsafe_copyto!(pointer(out_buf, 1), in_ptr + n_copy_next, n_copy_start)
     end
-    s.out_offset = out_offset
+    s.out_offset += u16_n_copy
     nothing
 end
 
 """
-copy `n_copy` bytes from `dist` back in the out buffer in to `out_ptr` and the out buffer.
+copy `n_copy` bytes from `dist` back in the out buffer into `out_ptr` and the out buffer.
 this can error if `dist` goes before the start of the out buffer.
 """
 function copy_from_output!(out_ptr::Ptr{UInt8}, s::StreamState, n_copy::Int64, dist::UInt32)::Nothing
@@ -486,6 +495,8 @@ end
 write one byte into the out buffer.
 """
 function copy_one_byte!(s::StreamState, lit::UInt8)::Nothing
+    # this should always be inbounds because s.out_offset is a UInt16
+    # and s.out_buf is length 2^16
     @inbounds s.out_buf[begin + s.out_offset] = lit
     s.out_offset += UInt16(1)
     s.out_full |= iszero(s.out_offset)
