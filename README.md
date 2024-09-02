@@ -1,7 +1,7 @@
 # CodecInflate64.jl
 
-[![CI](https://github.com/nhz2/CodecInflate64.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/nhz2/CodecInflate64.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/nhz2/CodecInflate64.jl/branch/main/graph/badge.svg?token=K3J0T9BZ42)](https://codecov.io/gh/nhz2/CodecInflate64.jl)
+[![CI](https://github.com/JuliaIO/CodecInflate64.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaIO/CodecInflate64.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/JuliaIO/CodecInflate64.jl/branch/main/graph/badge.svg?token=K3J0T9BZ42)](https://codecov.io/gh/JuliaIO/CodecInflate64.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 CodecInflate64 implements deflate64 decompression for the [TranscodingStream.jl](https://github.com/JuliaIO/TranscodingStreams.jl) interface.
